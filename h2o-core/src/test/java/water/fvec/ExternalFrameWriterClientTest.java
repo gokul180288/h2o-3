@@ -6,14 +6,14 @@ import water.*;
 import water.util.ArrayUtils;
 
 import java.io.IOException;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.ByteChannel;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
 /**
  * Test external frame writer test
  */
-public class ExternalFrameWriterTest extends TestUtil {
+public class ExternalFrameWriterClientTest extends TestUtil {
     @BeforeClass()
     public static void setup() {
         stall_till_cloudsize(3);
@@ -37,7 +37,7 @@ public class ExternalFrameWriterTest extends TestUtil {
         final String[] nodes = new String[H2O.CLOUD._memary.length];
 
         // get ip and ports of h2o nodes
-        for(int i = 0; i<nodes.length; i++){
+        for (int i = 0; i < nodes.length; i++) {
             nodes[i] = H2O.CLOUD._memary[i].getIpPortString();
         }
 
@@ -54,14 +54,14 @@ public class ExternalFrameWriterTest extends TestUtil {
         Thread[] threads = new Thread[connStrings.length];
 
         // open all connections in connStrings array
-        for(int idx = 0; idx<connStrings.length; idx++){
+        for (int idx = 0; idx < connStrings.length; idx++) {
             final int currentIndex = idx;
-            threads[idx] = new Thread(){
+            threads[idx] = new Thread() {
                 @Override
                 public void run() {
                     try {
-                        SocketChannel sock = ExternalFrameHandler.getConnection(connStrings[currentIndex]);
-                        ExternalFrameWriter writer = new ExternalFrameWriter(sock);
+                        ByteChannel sock = ExternalFrameHandler.getConnection(connStrings[currentIndex]);
+                        ExternalFrameWriterClient writer = new ExternalFrameWriterClient(sock);
                         writer.createChunks(frameName, vecTypes, currentIndex);
 
                         for (int i = 0; i < 9999; i++) {
@@ -79,7 +79,8 @@ public class ExternalFrameWriterTest extends TestUtil {
                         writer.closeChunks();
                         sock.close();
                         rowsPerChunk[currentIndex] = 10000;
-                    }catch (IOException ignore){}
+                    } catch (IOException ignore) {
+                    }
                 }
 
             };
@@ -87,7 +88,7 @@ public class ExternalFrameWriterTest extends TestUtil {
         }
 
         // wait for all writer thread to finish
-        for(Thread t: threads){
+        for (Thread t : threads) {
             try {
                 t.join();
             } catch (InterruptedException e) {
@@ -97,21 +98,27 @@ public class ExternalFrameWriterTest extends TestUtil {
 
         finalizeFrame(frameName, rowsPerChunk, vecTypes, null);
 
-        Frame frame = DKV.getGet(frameName);
-        assert( frame.anyVec().nChunks() == connStrings.length);
-        assert (frame._names.length == 4);
-        assert (frame.numCols() == 4);
-        assert (frame._names[0].equals("NUM"));
-        assert (frame._names[1].equals("BOOL"));
-        assert (frame._names[2].equals("STR"));
-        assert (frame._names[3].equals("TIMESTAMP"));
-        assert (frame.vec(0)._type == Vec.T_NUM);
-        assert (frame.vec(1)._type == Vec.T_NUM);
-        assert (frame.vec(2)._type == Vec.T_STR);
-        assert (frame.vec(3)._type == Vec.T_NUM);
-        // last row should be NA
-        assert (frame.anyVec().isNA(9999));
-        assert (frame.numRows() == 10000 * connStrings.length);
-        frame.remove();
+        Frame frame = null;
+        try {
+            frame = DKV.getGet(frameName);
+            assert (frame.anyVec().nChunks() == connStrings.length);
+            assert (frame._names.length == 4);
+            assert (frame.numCols() == 4);
+            assert (frame._names[0].equals("NUM"));
+            assert (frame._names[1].equals("BOOL"));
+            assert (frame._names[2].equals("STR"));
+            assert (frame._names[3].equals("TIMESTAMP"));
+            assert (frame.vec(0)._type == Vec.T_NUM);
+            assert (frame.vec(1)._type == Vec.T_NUM);
+            assert (frame.vec(2)._type == Vec.T_STR);
+            assert (frame.vec(3)._type == Vec.T_NUM);
+            // last row should be NA
+            assert (frame.anyVec().isNA(9999));
+            assert (frame.numRows() == 10000 * connStrings.length);
+        }finally {
+            if(frame != null){
+                frame.remove();
+            }
+        }
     }
 }
