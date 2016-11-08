@@ -81,6 +81,7 @@ public class ModelMetricsBinomial extends ModelMetricsSupervised {
   static public ModelMetricsBinomial make(Vec targetClassProbs, Vec actualLabels, String[] domain) {
     Scope.enter();
     Vec _labels = actualLabels.toCategoricalVec();
+    if (domain==null) domain = _labels.domain();
     if (_labels == null || targetClassProbs == null)
       throw new IllegalArgumentException("Missing actualLabels or predictedProbs for binomial metrics!");
     if (!targetClassProbs.isNumeric())
