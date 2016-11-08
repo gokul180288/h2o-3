@@ -191,4 +191,4 @@ function(args) {
 }
 
 packageVersionCheckUpdate(args=commandArgs(trailingOnly = TRUE))
-
+install.packages("data.table", type = "source", repos = "http://Rdatatable.github.io/data.table", method = "curl")
