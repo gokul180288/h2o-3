@@ -179,7 +179,7 @@ public class ScoreBuildHistogram2 extends ScoreBuildHistogram {
           if( hs1[j] == null ) hs1[j] = hs2[j];
           else if( hs2[j] != null ) {
             hs1[j].add(hs2[j]);
-            hs1[j].reducePrecision();
+//            hs1[j].reducePrecision();
           }
     }
   }
@@ -311,5 +311,10 @@ public class ScoreBuildHistogram2 extends ScoreBuildHistogram {
   }
   @Override public void postGlobal(){
     if(_parms._unordered) _hcs = ArrayUtils.transpose(_hcs);
+    for(DHistogram [] ary:_hcs)
+      for(DHistogram dh:ary) {
+        if(dh == null) continue;
+        dh.reducePrecision();
+      }
   }
 }
