@@ -696,6 +696,7 @@ public abstract class DeepWaterAbstractIntegrationTest extends TestUtil {
       p._response_column = "C2";
       p._balance_classes = true;
       p._epochs = 1;
+      p._seed = 1234;
       p._max_after_balance_size = 2f;
       p._class_sampling_factors = new float[]{3,5};
       DeepWater j = new DeepWater(p);
